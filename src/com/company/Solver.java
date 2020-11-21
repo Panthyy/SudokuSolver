@@ -26,7 +26,6 @@ public class Solver {
             int[][] board,TreeMap[] tm)
     {
 
-
         int row = -1;
         int col = -1;
         boolean isEmpty = true;
@@ -83,7 +82,7 @@ public class Solver {
         for (int colNum = c - 1 ; colNum <= (c + 1) ; colNum +=1  ) {
 
             for (int rowNum = r - 1 ; rowNum <= (r + 1) ; rowNum +=1  ) {
-                if (Sudoku[colNum][rowNum] !=0 &&  colNum != Pos.GetCol() ^ rowNum != Pos.GetRow() ) {
+                if (Sudoku[colNum][rowNum] !=0) {
                     if (Value == Sudoku[colNum][rowNum] ){
                         return false;
                     }
