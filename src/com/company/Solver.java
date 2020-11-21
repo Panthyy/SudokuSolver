@@ -1,68 +1,126 @@
 package com.company;
+import com.sun.source.tree.Tree;
+
 import java.util.Comparator;
 
 import java.util.*;
 
 public class Solver {
-    private int[][] Soduko;
-    Random rand = new Random();
-    static ArrayList<Integer> Range  = new ArrayList<Integer>(Arrays.asList(1,2,3,4,5,6,7,8,9));
-    public Solver(int[][] Soduko){
-        this.Soduko = Soduko;
-    }
-// to do next choose technique, either backtracking or shuffle
 
-    public int[][] Solve(int[][] Soduko){
-        ArrayList<Tuple>[] MissingInPos;
-        MissingInPos = GetMissingIn3x3(Soduko);
-        for (ArrayList<Tuple> ta : MissingInPos ) {
-            ta.sort(new TupleSorter());
-            for (Tuple te: ta) {
-                GetMissingIn1x1(new Tuple(te.GetCol(),te.GetRow())).forEach( (e) ->{
-                    if (te.getMissing().contains(e)){
-                        te.getMissing().remove(e);
-                    }
-                });
-                te.SetValue(te.getMissing().get(rand.nextInt(te.getMissing().size())));
+    Random rand = new Random();
+    TreeMap[] a = new TreeMap[9];
+    static ArrayList<Integer> Range  = new ArrayList<Integer>(Arrays.asList(1,2,3,4,5,6,7,8,9));
+    public Solver(){
+    }
+
+    public void CalcValids(int[][] Sudoku){
+        ArrayList<Tuple> MissingInPos;
+        MissingInPos = GetsValidsIn3x3(Sudoku);
+            for (Tuple te: MissingInPos) {
+                te.SetMissing(GetValidsInRowAndCol(te,Sudoku));
+                }
+            solveSudoku(Sudoku,a);
+        Print(Sudoku);
+    }
+    public  boolean solveSudoku(
+            int[][] board,TreeMap[] tm)
+    {
+
+
+        int row = -1;
+        int col = -1;
+        boolean isEmpty = true;
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                if (board[i][j] == 0)
+                {
+                    row = i;
+                    col = j;
+                    isEmpty = false;
+                    break;
+                }
+            }
+            if (!isEmpty) {
+                break;
             }
         }
-        return null;
-    }
-    public int[][] CreateSodukoMap(){
-        return null;
-    }
+        if (isEmpty)
+        {
+            return true;
+        }
 
-    public ArrayList<Tuple> Checks (ArrayList<Tuple>[] MissingInPos){
-        ArrayList<Tuple> List = new ArrayList<>();
-        for (ArrayList<Tuple> ta : MissingInPos ) {
-            for (Tuple te: ta) {
-                for (int i = 0; i < 9; i++) {
-                    if (Soduko[te.GetCol()][i] == te.GetValue() && te.GetRow() != i ){
-                        List.add(te);
-                        //backtracking
-                        te.getMissing().remove(te.GetValue());
-                    }
-                    if (Soduko[i][te.GetRow()] == te.GetValue() && te.GetCol() != i) {
-                        List.add(te);
-                        //backtracking
-                        te.getMissing().remove(te.GetValue());
+        for (int num = 0; num < ((Tuple) tm[row].get(col)).getMissing().size(); num++)
+        {
+            if (IsValid(((Tuple) tm[row].get(col)),board,((Tuple) tm[row].get(col)).getMissing().get(num)))
+            {
+                board[row][col] = ((Tuple) tm[row].get(col)).getMissing().get(num);
+                ((Tuple) tm[row].get(col)).SetValue(((Tuple) tm[row].get(col)).getMissing().get(num));
+                if (solveSudoku(board, tm))
+                {
+                    return true;
+                }
+                else
+                {
+                    board[row][col] = 0;
+                }
+            }
+        }
+        return false;
+    }
+    public boolean IsValid (Tuple Pos,int[][] Sudoku,int Value){
+        for (int i = 0; i < 9; i++) {
+            if (Sudoku[Pos.GetCol()][i] == Value && Pos.GetRow() != i ){
+                return false;
+            }
+            if (Sudoku[i][Pos.GetRow()] == Value && Pos.GetCol() != i) {
+                return false;
+            }
+        }
+        int c = 1+((Pos.GetCol())/3) * 3;
+        int r =1+((Pos.GetRow())/3) * 3;
+        for (int colNum = c - 1 ; colNum <= (c + 1) ; colNum +=1  ) {
+
+            for (int rowNum = r - 1 ; rowNum <= (r + 1) ; rowNum +=1  ) {
+                if (Sudoku[colNum][rowNum] !=0 &&  colNum != Pos.GetCol() ^ rowNum != Pos.GetRow() ) {
+                    if (Value == Sudoku[colNum][rowNum] ){
+                        return false;
                     }
                 }
-                te.SetValue(te.getMissing().get(rand.nextInt(te.getMissing().size())));
             }
         }
-        return List;
+        return true;
+    }
+    public void Print(int[][] Sudoku){
+        for (int[] col: Sudoku) {
+            for (int value: col) {
+                System.out.print(value);
+                System.out.print(" ");
+            }
+            System.out.print("\n");
+        }
     }
 
-    public ArrayList<Integer> GetMissingIn1x1(Tuple pos) {
+
+
+    public ArrayList<Integer> GetValidsInRowAndCol(Tuple pos,int[][] Sudoku) {
         ArrayList<Integer> tmp = new ArrayList<Integer>();
-        ArrayList<Integer> rangetmp = Range;
+        ArrayList<Integer> rangetmp = new ArrayList<>(pos.getMissing());
         for (int i = 0; i < 9; i++) {
-            if (Soduko[pos.GetCol()][i] != 0) {
-                tmp.add(Soduko[pos.GetCol()][i]);
+            if (Sudoku[pos.GetCol()][i] != 0) {
+                tmp.add(Sudoku[pos.GetCol()][i]);
+            } else{
+                if (a[pos.GetCol()] == null){
+                    a[pos.GetCol()] = new TreeMap();
+                    a[pos.GetCol()].put(pos.GetRow(),pos);
+                }
+                else{
+                    a[pos.GetCol()].put(pos.GetRow(),pos);
+                }
             }
-            if (Soduko[i][pos.GetRow()] != 0) {
-                tmp.add(Soduko[i][pos.GetRow()]);
+            if (Sudoku[i][pos.GetRow()] != 0) {
+                tmp.add(Sudoku[i][pos.GetRow()]);
             }
         }
 
@@ -75,31 +133,29 @@ public class Solver {
         return rangetmp;
 
     }
-    public ArrayList<Tuple>[] GetMissingIn3x3(int[][] Soduko){
-        ArrayList<Tuple>[] tmp1 = new ArrayList[9];
-        ArrayList<Integer>[] tmp = new ArrayList[9];
+    public ArrayList<Tuple> GetsValidsIn3x3(int[][] Sudoku){
+        ArrayList<Tuple> tmp1 = new ArrayList<>();
+        int tempcount = 0;
         int count = 0;
         for (int i = 1; i < 9; i+=3) {
             for (int j = 1; j < 9; j+=3) {
-                ArrayList<Integer> rangetmp = Range;
+                ArrayList<Integer> rangetmp = new ArrayList<>(Range);
+                tempcount = tmp1.size();
                 for (int colNum = i - 1 ; colNum <= (i + 1) ; colNum +=1  ) {
 
                     for (int rowNum = j - 1 ; rowNum <= (j + 1) ; rowNum +=1  ) {
-                        if (Soduko[colNum][rowNum] !=0) {
-                            if (rangetmp.contains(Soduko[colNum][rowNum])){
-                                rangetmp.remove(Soduko[colNum][rowNum]);
+                        if (Sudoku[colNum][rowNum] !=0) {
+                            if (rangetmp.contains(Sudoku[colNum][rowNum])){
+                                rangetmp.remove(rangetmp.indexOf(Sudoku[colNum][rowNum]));
                             }
                         } else{
-                            tmp1[count].add(new Tuple(colNum,rowNum));
+                            tmp1.add(new Tuple(colNum,rowNum));
                         }
                     }
                 }
-                for (ArrayList<Tuple> ta : tmp1 ) {
-                    for (Tuple te: ta) {
-                        te.SetMissing(rangetmp);
-                    }
+                for (int h = tempcount; h <tmp1.size();h++){
+                    tmp1.get(h).SetMissing(rangetmp);
                 }
-                tmp[count] = rangetmp;
                 count++;
             }
         }
@@ -110,18 +166,17 @@ class TupleSorter implements Comparator<Tuple>
 {
     @Override
     public int compare(Tuple o1, Tuple o2) {
-        return (((Integer) o1.getMissing().size())).compareTo(((Integer) o2.getMissing().size()));
+        return (((Integer) o1.GetRow())).compareTo(((Integer) o2.GetRow()));
     }
 }
 class Tuple{
 
     private int col,row,Value;
-    private boolean Violation = false;
     private ArrayList<Integer> missing;
 
     Tuple(int col, int row){
         this.col = col;
-        this.row = col;
+        this.row = row;
     }
     Tuple(int col, int row, int Value){
         this.col = col;
@@ -146,12 +201,6 @@ class Tuple{
     }
     public int GetValue(){
         return this.Value;
-    }
-    public boolean GetViolation(){
-        return  Violation;
-    }
-    public void SetViolation(boolean Violation){
-        this.Violation = Violation;
     }
 
     public ArrayList<Integer> getMissing() {
